@@ -35,7 +35,9 @@ public class AlwaysFace : MonoBehaviour
             }else if(_dir == Direction.Forward){
                 transform.rotation = Quaternion.LookRotation(_target.position - transform.position, Vector3.forward);
             }
-
         }
+    }
+    public void SetFaceByPosition(Vector3 pos){
+        transform.LookAt(pos);
     }
 }

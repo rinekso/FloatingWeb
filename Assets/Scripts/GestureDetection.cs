@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -8,86 +9,176 @@ using UnityEngine.Events;
 public struct Gesture{
     public string name;
     public List<Vector3> fingerDatas;
-    public List<Quaternion> fingerRot;
     public UnityEvent onRecognized;
 }
 public class GestureDetection : MonoBehaviour
 {
     public float threshold = 0.1f;
     public bool debugMode = true;
+    public bool saveRightSkeleton = true;
     public OVRSkeleton skeletonRight;
     public OVRSkeleton skeletonLeft;
     public List<Gesture> gestures;
     private List<OVRBone> fingerBone;
     private Gesture previousGesture;
+    // Resize Func
+    [SerializeField]
+    CanvasEntity canvasTarget;
+    float startDistanceHorizontal,startDistanceVertical;
+    float startWidthCanvas,startHeighCanvas;
+    [SerializeField]
+    Transform helper;
+    bool isFirstResize = false;
+    bool isResizing = false;
     // Start is called before the first frame update
     void Start()
     {
         previousGesture = new Gesture();
     }
-    Vector3 thumb,index;
     // Update is called once per frame
     void Update()
     {
         if(debugMode && Input.GetKeyDown(KeyCode.Space)){
-            fingerBone = new List<OVRBone>(skeletonRight.Bones);
-            Save();
+            fingerBone = new List<OVRBone>(saveRightSkeleton ? skeletonRight.Bones : skeletonLeft.Bones);
+            Save(saveRightSkeleton ? skeletonRight : skeletonLeft);
         }else{
-            Gesture currentGesture = Recognize();
+            Gesture currentGesture = Recognize(skeletonRight);
             bool hasRecognized = !currentGesture.Equals(new Gesture());
 
             if(hasRecognized && !currentGesture.Equals(previousGesture)){
-                print("new Gesture "+currentGesture.name);
+                // print("new Gesture "+currentGesture.name);
                 previousGesture = currentGesture;
-                // if(currentGesture.name == "Bant*ng"){
-                //     passthroughLayer.colorMapEditorType = OVRPassthroughLayer.ColorMapEditorType.GrayscaleToColor;
-                // }else{
-                //     passthroughLayer.colorMapEditorType = OVRPassthroughLayer.ColorMapEditorType.ColorAdjustment;
-                // }
                 // currentGesture.onRecognized.Invoke();
                 fingerBone = new List<OVRBone>(skeletonRight.Bones);
             }
-            for (int i = 0; i < fingerBone.Count; i++)
-            {
-                if(fingerBone[i].Id == OVRSkeleton.BoneId.Hand_Thumb3) thumb = fingerBone[i].Transform.position;
-                if(fingerBone[i].Id == OVRSkeleton.BoneId.Hand_Index2) index = fingerBone[i].Transform.position;
+
+            DetectCanvasInFront();
+            if(canvasTarget != null){
+                if(currentGesture.name == "PistolRight"){
+                    Gesture leftGesture = Recognize(skeletonLeft);
+                    // print("left "+leftGesture.name);
+                    if(leftGesture.name == "PistolLeft"){
+                        if(!isFirstResize){
+                            print("Resize");
+                            isFirstResize = true;
+                            InitResize();
+                        }
+                        Resize();
+                    }else{
+                        if(isFirstResize) ApplyResize();
+                        isFirstResize = false;                        
+                    }
+                }else{
+                    if(isFirstResize) ApplyResize();
+                    isFirstResize = false;
+                }
             }
-            // if(_mirror && currentGesture.name != "Love"){
-            //     foreach (var item in _handMirror.HandPoins)
-            //     {
-            //         OVRBone bone = fingerBone.Find(x => x.Id == item.id);
-            //         if(bone != null)
-            //             item.target.localRotation = fingerBone.Find(x => x.Id == item.id).Transform.localRotation;
-            //         else{
-            //             print("not found "+item.target.name);
-            //         }
-            //     }
-            // }else if(currentGesture.name == "Love"){
-            //     ForceGesture(gestures.Find(x => x.name == "ThumbsUp"));
-            // }
         }
     }
-    void Save(){
+    void InitResize(){
+        UpdateHelperChildPos();
+        startDistanceHorizontal = DistanceH();
+        startDistanceVertical = DistanceV();
+        canvasTarget.InitResize();
+        isResizing = true;
+    }
+    void Resize(){
+        UpdateHelperChildPos();
+
+        float horizontalCalculate = DistanceH(), verticalCalculate = DistanceV();
+
+        float horizonDiff = horizontalCalculate-startDistanceHorizontal;
+        float verticalDiff = verticalCalculate-startDistanceVertical;
+
+        // print(startDistanceHorizontal+"/"+startDistanceVertical+" | "+horizontalCalculate+"/"+verticalCalculate);
+        float scale = 2000;
+        canvasTarget.ResizeWeb(horizonDiff*scale,verticalDiff*scale);
+    }
+    void UpdateHelperChildPos(){
+        Transform tipLeft = GetFinger(skeletonLeft,OVRSkeleton.BoneId.Hand_Index1);
+        Transform tipRight = GetFinger(skeletonRight,OVRSkeleton.BoneId.Hand_Index1);
+        helper.transform.LookAt(Camera.main.transform);
+        helper.transform.position = Vector3.Lerp(tipLeft.position,tipRight.position,0.5f);
+        helper.GetChild(0).localPosition = helper.InverseTransformPoint(tipLeft.transform.position);
+        helper.GetChild(1).localPosition = helper.InverseTransformPoint(tipRight.transform.position);
+    }
+    float DistanceH(){
+        float horizontalCalculate = 0;
+        Vector3 leftHorizontal = Vector3.zero, rightHorizontal = Vector3.zero;
+        leftHorizontal.y = helper.GetChild(0).localPosition.y;
+        rightHorizontal.y = helper.GetChild(1).localPosition.y;
+        horizontalCalculate += Vector3.Distance(helper.GetChild(0).localPosition,leftHorizontal);
+        horizontalCalculate += Vector3.Distance(helper.GetChild(1).localPosition,rightHorizontal);
+        return horizontalCalculate;
+    }
+    float DistanceV(){
+        float verticalCalculate = 0;
+        Vector3 leftHorizontal = Vector3.zero, rightHorizontal = Vector3.zero;
+        leftHorizontal.x = helper.GetChild(0).localPosition.x;
+        rightHorizontal.x = helper.GetChild(1).localPosition.x;
+        verticalCalculate += Vector3.Distance(helper.GetChild(0).localPosition,leftHorizontal);
+        verticalCalculate += Vector3.Distance(helper.GetChild(1).localPosition,rightHorizontal);
+        return verticalCalculate;
+    }
+    void ApplyResize(){
+        isResizing = false;
+        canvasTarget.Apply();
+    }
+    Transform GetFinger(OVRSkeleton skeletonTarget, OVRSkeleton.BoneId boneId){
+        for (int i = 0; i < skeletonTarget.Bones.Count; i++)
+        {
+            if(skeletonTarget.Bones[i].Id == boneId)
+                return skeletonTarget.Bones[i].Transform;
+        }
+        return null;
+    }
+    void DetectCanvasInFront(){
+        Ray ray = new Ray();
+        
+        RaycastHit[] hits;
+        hits = Physics.RaycastAll(Camera.main.transform.position, Camera.main.transform.forward, 100);
+
+        if(hits.Length > 0)
+            for (int i = 0; i < hits.Length; i++)
+            {
+                RaycastHit hit = hits[i];
+                if(hit.transform.tag == "Canvas"){
+                    canvasTarget = hit.transform.parent.GetComponent<CanvasEntity>();
+                    canvasTarget.ShowBorder(true);
+                }else{
+                    if(canvasTarget != null)
+                        canvasTarget.ShowBorder(false);
+
+                    if(!isResizing)
+                        canvasTarget = null;
+                }
+            }
+        else{
+            if(canvasTarget != null)
+                canvasTarget.ShowBorder(false);
+
+            if(!isResizing)
+                canvasTarget = null;
+        }
+    }
+    void Save(OVRSkeleton target){
         print("save");
         Gesture g = new Gesture();
         g.name = "new Gesture";
         List<Vector3> data = new List<Vector3>();
-        List<Quaternion> rotData = new List<Quaternion>();
 
         foreach (var bone in fingerBone)
         {
             print(bone.Transform.position);
-            data.Add(skeletonRight.transform.InverseTransformPoint(bone.Transform.position));
-            rotData.Add(bone.Transform.localRotation);
+            data.Add(target.transform.InverseTransformPoint(bone.Transform.position));
         }
         g.fingerDatas = data;
-        g.fingerRot = rotData;
         gestures.Add(g);
     }
-    Gesture Recognize(){
+    Gesture Recognize(OVRSkeleton skeletonTarget){
         Gesture currentGesture = new Gesture();
         float currentMin = Mathf.Infinity;
-        fingerBone = new List<OVRBone>(skeletonRight.Bones);
+        fingerBone = new List<OVRBone>(skeletonTarget.Bones);
 
         foreach (var gesture in gestures)
         {
@@ -95,7 +186,7 @@ public class GestureDetection : MonoBehaviour
             bool isDiscarded = false;
             for (int i = 0; i < fingerBone.Count; i++)
             {
-                Vector3 currenData = skeletonRight.transform.InverseTransformPoint(fingerBone[i].Transform.position);
+                Vector3 currenData = skeletonTarget.transform.InverseTransformPoint(fingerBone[i].Transform.position);
                 float distance = Vector3.Distance(currenData, gesture.fingerDatas[i]);
                 if(distance > threshold){
                     isDiscarded = true;
