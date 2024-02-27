@@ -3,7 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using TLab.Android.WebView;
+using UnityEngine.PlayerLoop;
+using UnityEngine.XR;
+using UnityEngine.UIElements;
+using UnityEngine.InputSystem;
 
+[RequireComponent(typeof(TMP_InputField))]
 public class SearchBarScript : MonoBehaviour
 {
     [SerializeField]
@@ -29,5 +34,11 @@ public class SearchBarScript : MonoBehaviour
         }
 
         m_webview.LoadUrl(hedder + m_searchBar.text);
+    }
+    public void KeyboardHide(){
+        m_searchBar.keyboardType = (TouchScreenKeyboardType)(-1);
+    }
+    void Update(){
+        // print("keyboard "+Keyboard.current.displayName);        
     }
 }

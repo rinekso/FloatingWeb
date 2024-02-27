@@ -22,7 +22,6 @@ public class GestureDetection : MonoBehaviour
     private List<OVRBone> fingerBone;
     private Gesture previousGesture;
     // Resize Func
-    [SerializeField]
     CanvasEntity canvasTarget;
     float startDistanceHorizontal,startDistanceVertical;
     float startWidthCanvas,startHeighCanvas;
@@ -48,7 +47,10 @@ public class GestureDetection : MonoBehaviour
             if(hasRecognized && !currentGesture.Equals(previousGesture)){
                 // print("new Gesture "+currentGesture.name);
                 previousGesture = currentGesture;
-                // currentGesture.onRecognized.Invoke();
+
+                if(currentGesture.onRecognized != null)
+                    currentGesture.onRecognized.Invoke();
+
                 fingerBone = new List<OVRBone>(skeletonRight.Bones);
             }
 
@@ -75,6 +77,12 @@ public class GestureDetection : MonoBehaviour
             }
         }
     }
+    // public void OpenMenuRight(){
+    //     MenuScript.Instance.ShowMenu(GetFinger(skeletonRight, OVRSkeleton.BoneId.Hand_Index2).position, true);
+    // }
+    // public void OpenMenuLeft(){
+    //     MenuScript.Instance.ShowMenu(GetFinger(skeletonLeft, OVRSkeleton.BoneId.Hand_Index2).position, false);
+    // }
     void InitResize(){
         UpdateHelperChildPos();
         startDistanceHorizontal = DistanceH();
@@ -122,7 +130,16 @@ public class GestureDetection : MonoBehaviour
     }
     void ApplyResize(){
         isResizing = false;
+        if(waitSatbleResize != null){
+            StopCoroutine(waitSatbleResize);
+        }
+        waitSatbleResize = StartCoroutine(WaitStableResize());
+    }
+    Coroutine waitSatbleResize;
+    IEnumerator WaitStableResize(){
+        yield return new WaitForSeconds(2);
         canvasTarget.Apply();
+        waitSatbleResize = null;
     }
     Transform GetFinger(OVRSkeleton skeletonTarget, OVRSkeleton.BoneId boneId){
         for (int i = 0; i < skeletonTarget.Bones.Count; i++)
@@ -143,8 +160,13 @@ public class GestureDetection : MonoBehaviour
             {
                 RaycastHit hit = hits[i];
                 if(hit.transform.tag == "Canvas"){
-                    canvasTarget = hit.transform.parent.GetComponent<CanvasEntity>();
-                    canvasTarget.ShowBorder(true);
+                    CanvasEntity canvasTemp = hit.transform.parent.GetComponent<CanvasEntity>();
+                    if(canvasTemp.IsUnlock){
+                        canvasTarget = hit.transform.parent.GetComponent<CanvasEntity>();
+                        canvasTarget.ShowBorder(true);
+                    }else{
+                        canvasTarget = null;
+                    }
                 }else{
                     if(canvasTarget != null)
                         canvasTarget.ShowBorder(false);
