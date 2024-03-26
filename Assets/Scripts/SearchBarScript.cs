@@ -7,10 +7,12 @@ using UnityEngine.PlayerLoop;
 using UnityEngine.XR;
 using UnityEngine.UIElements;
 using UnityEngine.InputSystem;
+using TLab.InputField;
 
 [RequireComponent(typeof(TMP_InputField))]
-public class SearchBarScript : MonoBehaviour
+public class SearchBarScript : TLabInputFieldBase
 {
+    [Space]
     [SerializeField]
     TMP_InputField m_searchBar;
     [SerializeField]
@@ -34,11 +36,52 @@ public class SearchBarScript : MonoBehaviour
         }
 
         m_webview.LoadUrl(hedder + m_searchBar.text);
+
+        m_keyborad.HideKeyborad(true);
     }
-    public void KeyboardHide(){
-        m_searchBar.keyboardType = (TouchScreenKeyboardType)(-1);
+    [System.NonSerialized] public string m_text = "";
+
+    #region KEY_EVENT
+
+    public override void OnBackSpacePressed()
+    {
+        if (m_text != "")
+        {
+            m_text = m_text.Remove(m_text.Length - 1);
+            Display();
+        }
     }
-    void Update(){
-        // print("keyboard "+Keyboard.current.displayName);        
+
+    public override void OnEnterPressed()
+    {
+        SearchGoogle();
+    }
+
+    public override void OnSpacePressed()
+    {
+        AddKey(" ");
+    }
+
+    public override void OnTabPressed()
+    {
+        AddKey("    ");
+    }
+
+    public override void OnKeyPressed(string input)
+    {
+        AddKey(input);
+    }
+
+    #endregion KEY_EVENT
+
+    public void Display()
+    {
+        m_searchBar.text = m_text;
+    }
+
+    public void AddKey(string key)
+    {
+        m_text += key;
+        Display();
     }
 }

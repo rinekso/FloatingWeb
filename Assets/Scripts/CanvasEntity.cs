@@ -22,6 +22,8 @@ public class CanvasEntity : MonoBehaviour
     }
     [SerializeField]
     GameObject[] otherMenu;
+    [SerializeField]
+    float minimum = 750;
     float scale,startWidthCanvas,startHeighCanvas;
     void Start(){
         scale = transform.GetChild(0).localScale.x;
@@ -38,9 +40,8 @@ public class CanvasEntity : MonoBehaviour
         print(startWidthCanvas+"/"+startHeighCanvas);
     }
     public void ResizeWeb(float width, float height){
-        float minimum = 750;
         float widthResult, heighResult;
-        widthResult = startHeighCanvas+width;
+        widthResult = startWidthCanvas+width;
         heighResult = startHeighCanvas+height;
         if(startWidthCanvas+width < minimum)
             widthResult = minimum;

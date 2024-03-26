@@ -4,7 +4,10 @@ using System.Diagnostics.Tracing;
 using Meta.XR.BuildingBlocks;
 using Oculus.Interaction;
 using Oculus.Interaction.Input;
+using TLab.Android.WebView;
+using TLab.InputField;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class MenuScript : MonoBehaviour
 {
@@ -24,11 +27,29 @@ public class MenuScript : MonoBehaviour
     public bool Visible{
         get => firstVisible;
     }
+    bool _virtualKeyboard = false;
+    public bool VirtualKeyboard{
+        set{
+            _virtualKeyboard = value;
+            TLabVKeyborad[] keyboards = FindObjectsOfType<TLabVKeyborad>();
+            for (int i = 0; i < keyboards.Length; i++)
+            {
+                keyboards[i].Disable = value;
+            }
+        }
+        get{
+            return _virtualKeyboard;
+        }
+    }
+    [SerializeField]
+    Image _keyboardBackground;
     void Awake(){
         Instance = this;
     }
     public void SpawnBrowser(){
-        Instantiate(browserTab,transform.position,Quaternion.LookRotation(Camera.main.transform.position));
+        float distance = .5f;
+        GameObject go = Instantiate(browserTab,transform.position+Camera.main.transform.forward*distance,Quaternion.LookRotation(Camera.main.transform.position));
+        go.GetComponentInChildren<CanvasEntity>().LookAt(Camera.main.transform.position);
         // HideMenu();
     }
     // public void HideMenu(){
@@ -77,5 +98,29 @@ public class MenuScript : MonoBehaviour
                 return false;
         }
         return true;
+    }
+    public void SaveLayout(){
+
+    }
+    public void ToggleVirtualKeyboard(){
+        VirtualKeyboard = !_virtualKeyboard;
+        _keyboardBackground.color = VirtualKeyboard ? new Color(128,128,128,255) : new Color(95,186,226,255);
+    }
+    public void ResetSave(){
+        PlayerPrefs.DeleteAll();
+    }
+    public void ClearCache(){
+        TLabWebView[] webview = FindObjectsOfType<TLabWebView>();
+        for (int i = 0; i < webview.Length; i++)
+        {
+            webview[i].ClearCache(true);
+        }
+    }
+    public void ClearCookie(){
+        TLabWebView[] webview = FindObjectsOfType<TLabWebView>();
+        for (int i = 0; i < webview.Length; i++)
+        {
+            webview[i].ClearCookie();
+        }
     }
 }
