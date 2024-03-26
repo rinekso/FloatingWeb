@@ -18,8 +18,6 @@ public class MenuScript : MonoBehaviour
     GameObject browserTab, visual;
     [SerializeField]
     Camera cam;
-    [SerializeField]
-    RayInteractor[] rayInteractors;
     // [SerializeField]
     // GameObject canvas, coll;
     public IHand LeftHand { get; set; }
@@ -79,11 +77,11 @@ public class MenuScript : MonoBehaviour
         if (LeftHand.GetJointPose(HandJointId.HandWristRoot, out wristPose))
         {
             transform.SetPose(wristPose);
-            transform.position = wristPose.position;
             bool visible = IsTargetVisible(cam,Camera.main.gameObject);
             if(firstVisible != visible){
                 firstVisible = visible;
                 visual.SetActive(visible);
+                visual.transform.localScale = visible?Vector3.one:Vector3.zero;
             }
             
         }

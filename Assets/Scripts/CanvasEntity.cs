@@ -64,6 +64,7 @@ public class CanvasEntity : MonoBehaviour
         transform.rotation = helperLookat.rotation;
     }
     public void Apply(){
+        print("resize Apply "+webView.WebWidth+"/"+webView.WebHeight);
         webView.RestartWebView();
     }
     public void CloseButton(){
