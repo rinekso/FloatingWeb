@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics.Tracing;
-using Meta.XR.BuildingBlocks;
 using Oculus.Interaction;
 using Oculus.Interaction.Input;
 using TLab.Android.WebView;
@@ -13,7 +9,7 @@ public class MenuScript : MonoBehaviour
 {
     public static MenuScript Instance;
     [SerializeField, Interface(typeof(IHand))]
-    private Object _leftHand;
+    private Object _leftHand, _leftHandController;
     [SerializeField]
     GameObject browserTab, visual;
     [SerializeField]
@@ -21,11 +17,27 @@ public class MenuScript : MonoBehaviour
     // [SerializeField]
     // GameObject canvas, coll;
     public IHand LeftHand { get; set; }
+    public IHand LeftHandController { get; set; }
+    [SerializeField]
+    OVRHand OvrHand;
     bool firstVisible = false;
     public bool Visible{
         get => firstVisible;
     }
-    bool _virtualKeyboard = false;
+    bool _virtualKeyboard = false, _toggleLock = true;
+    public bool ToggleLock{
+        set{
+            _toggleLock = value;
+            CanvasEntity[] canvas = FindObjectsOfType<CanvasEntity>();
+            for (int i = 0; i < canvas.Length; i++)
+            {
+                canvas[i].Lock(value);
+            }
+        }
+        get{
+            return _virtualKeyboard;
+        }
+    }
     public bool VirtualKeyboard{
         set{
             _virtualKeyboard = value;
@@ -40,7 +52,7 @@ public class MenuScript : MonoBehaviour
         }
     }
     [SerializeField]
-    Image _keyboardBackground;
+    GameObject _keyboardLock, _keyboardLockOff;
     void Awake(){
         Instance = this;
     }
@@ -68,13 +80,20 @@ public class MenuScript : MonoBehaviour
     void Start()
     {
         LeftHand = _leftHand as IHand;
+        LeftHandController = _leftHandController as IHand;
     }
 
     // Update is called once per frame
     void Update()
     {
+        IHand hand;
+        if(OvrHand.IsTracked)
+            hand = LeftHand;
+        else
+            hand = LeftHandController;
+
         Pose wristPose;
-        if (LeftHand.GetJointPose(HandJointId.HandWristRoot, out wristPose))
+        if (hand.GetJointPose(HandJointId.HandWristRoot, out wristPose))
         {
             transform.SetPose(wristPose);
             bool visible = IsTargetVisible(cam,Camera.main.gameObject);
@@ -98,12 +117,17 @@ public class MenuScript : MonoBehaviour
         return true;
     }
     public void SaveLayout(){
-
+        
     }
-    public void ToggleVirtualKeyboard(){
-        VirtualKeyboard = !_virtualKeyboard;
-        _keyboardBackground.color = VirtualKeyboard ? new Color(128,128,128,255) : new Color(95,186,226,255);
+    public void LockToggle(){
+        ToggleLock = !_toggleLock;
+        _keyboardLock.SetActive(!_toggleLock);
+        _keyboardLockOff.SetActive(_toggleLock);
     }
+    // public void ToggleVirtualKeyboard(){
+    //     VirtualKeyboard = !_virtualKeyboard;
+    //     _keyboardBackground.color = _virtualKeyboard ? Color.white : new Color(95,186,226,255);
+    // }
     public void ResetSave(){
         PlayerPrefs.DeleteAll();
     }

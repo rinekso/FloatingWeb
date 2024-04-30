@@ -84,4 +84,7 @@ public class SearchBarScript : TLabInputFieldBase
         m_text += key;
         Display();
     }
+    public void focus(){
+        print("focus");
+    }
 }

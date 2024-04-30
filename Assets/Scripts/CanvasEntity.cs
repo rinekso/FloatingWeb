@@ -25,6 +25,8 @@ public class CanvasEntity : MonoBehaviour
     [SerializeField]
     float minimum = 750;
     float scale,startWidthCanvas,startHeighCanvas;
+    [SerializeField]
+    GameObject lockOn,lockOff;
     void Start(){
         scale = transform.GetChild(0).localScale.x;
     }
@@ -75,11 +77,15 @@ public class CanvasEntity : MonoBehaviour
         Lock(isUnlock);
     }
     public void Lock(bool val){
+        isUnlock = val;
         canvasAnchor.gameObject.SetActive(val);
         if(!val) border.SetActive(false);
         for (int i = 0; i < otherMenu.Length; i++)
         {
             otherMenu[i].SetActive(val);
         }
+
+        lockOn.SetActive(val);
+        lockOff.SetActive(!val);
     }
 }
