@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using Oculus.Interaction;
 using Oculus.Interaction.Input;
 using TLab.Android.WebView;
@@ -14,6 +16,19 @@ public class MenuScript : MonoBehaviour
     GameObject browserTab, visual;
     [SerializeField]
     Camera cam;
+    [System.Serializable]
+    public struct BrowserData{
+        public Vector3 ContainerPosition;
+        public Vector3 PointAnchorPosition;
+        public Quaternion CanvasRotation;
+        public Vector2 CanvasParent;
+        public string url;
+    }
+    [System.Serializable]
+    public struct BrowserDataContainer{
+        public List<BrowserData> BrowserData;
+    }
+    BrowserDataContainer browserData;
     // [SerializeField]
     // GameObject canvas, coll;
     public IHand LeftHand { get; set; }
@@ -81,6 +96,9 @@ public class MenuScript : MonoBehaviour
     {
         LeftHand = _leftHand as IHand;
         LeftHandController = _leftHandController as IHand;
+        if(PlayerPrefs.HasKey("BrowserData")){
+            LoadLayout();
+        }
     }
 
     // Update is called once per frame
@@ -117,7 +135,46 @@ public class MenuScript : MonoBehaviour
         return true;
     }
     public void SaveLayout(){
-        
+        browserData = new BrowserDataContainer();
+        browserData.BrowserData = new List<BrowserData>();
+        GameObject[] browsers = GameObject.FindGameObjectsWithTag("Browser");
+        for(int i = 0; i<browsers.Length; i++){
+            BrowserData dataTemp;
+            CanvasEntity canvasEntity = browsers[i].GetComponentInChildren<CanvasEntity>();
+            dataTemp.ContainerPosition = browsers[i].transform.position;
+            dataTemp.PointAnchorPosition = browsers[i].transform.GetChild(0).position;
+            dataTemp.CanvasRotation = canvasEntity.transform.rotation;
+            dataTemp.CanvasParent = canvasEntity.CanvasParent.sizeDelta;
+            dataTemp.url = canvasEntity.GetURL();
+            browserData.BrowserData.Add(dataTemp);
+        }
+        PlayerPrefs.SetString("BrowserData",JsonUtility.ToJson(browserData));
+    }
+    public void LoadLayout(){
+        GameObject[] browsers = GameObject.FindGameObjectsWithTag("Browser");
+        for (int i = 0; i < browsers.Length; i++)
+        {
+            Destroy(browsers[i]);
+        }
+        StartCoroutine(InstantiateWeb());
+    }
+    IEnumerator InstantiateWeb(){
+        BrowserDataContainer BrowserDataSaved = JsonUtility.FromJson<BrowserDataContainer>(PlayerPrefs.GetString("BrowserData"));
+        foreach (var item in BrowserDataSaved.BrowserData)
+        {
+            GameObject go = Instantiate(browserTab);
+            CanvasEntity canvasEntity = go.GetComponentInChildren<CanvasEntity>();
+            go.transform.position = item.ContainerPosition;
+            go.transform.GetChild(0).position = item.PointAnchorPosition;
+            canvasEntity.transform.rotation = item.CanvasRotation;
+            bool wait = true;
+            while (wait)
+            {
+                wait = !canvasEntity.IsWebInit();
+                yield return new WaitForEndOfFrame();
+            }
+            canvasEntity.ResizeAndLoad(item.CanvasParent.x,item.CanvasParent.y,item.url);
+        }
     }
     public void LockToggle(){
         ToggleLock = !_toggleLock;

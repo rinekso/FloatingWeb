@@ -11,6 +11,9 @@ public class CanvasEntity : MonoBehaviour
     TLabWebView webView;
     [SerializeField]
     RectTransform canvasParent;
+    public RectTransform CanvasParent{
+        get{ return canvasParent; }
+    }
     [SerializeField]
     Transform coll, helperLookat;
     [SerializeField]
@@ -25,10 +28,16 @@ public class CanvasEntity : MonoBehaviour
     [SerializeField]
     float minimum = 750;
     float scale,startWidthCanvas,startHeighCanvas;
+    int webWidth, webHeight;
     [SerializeField]
     GameObject lockOn,lockOff;
-    void Start(){
+    void Awake(){
         scale = transform.GetChild(0).localScale.x;
+    }
+    void Start(){
+    }
+    public string GetURL(){
+        return webView.GetUrl();
     }
     public void ShowBorder(bool val){
         if(!isUnlock)
@@ -41,6 +50,26 @@ public class CanvasEntity : MonoBehaviour
         startHeighCanvas = canvasParent.sizeDelta.y;
         print(startWidthCanvas+"/"+startHeighCanvas);
     }
+    public bool IsWebInit(){
+        return webView.IsInitialized();
+    }
+    public void ResizeAndLoad(float width, float height, string url){
+        ResizeExact(width,height);
+        Apply();
+        webView.LoadUrl(url);
+    }
+    void ResizeExact(float width, float height){
+        canvasParent.sizeDelta = new Vector2(width,height);
+        webView.GetComponent<RectTransform>().sizeDelta = new Vector2(Mathf.RoundToInt(width),Mathf.RoundToInt(height-200f));
+        webWidth = Mathf.RoundToInt(startWidthCanvas + width);
+        webHeight = Mathf.RoundToInt(startHeighCanvas + height - 200f);
+        
+        coll.localScale = new Vector3(scale*width,scale*height,0.01f);
+        float y = height/2*scale+.1f;
+        helperLookat.localPosition = new Vector3(0,y*transform.localScale.y,0);
+        canvasParent.localPosition = new Vector3(0,y,0);
+        coll.transform.localPosition = new Vector3(0,y,0);
+    }
     public void ResizeWeb(float width, float height){
         float widthResult, heighResult;
         widthResult = startWidthCanvas+width;
@@ -52,11 +81,11 @@ public class CanvasEntity : MonoBehaviour
 
         canvasParent.sizeDelta = new Vector2(widthResult,heighResult);
         webView.GetComponent<RectTransform>().sizeDelta = new Vector2(Mathf.RoundToInt(widthResult),Mathf.RoundToInt(heighResult-200f));
-        webView.WebWidth = Mathf.RoundToInt(startWidthCanvas + width);
-        webView.WebHeight = Mathf.RoundToInt(startHeighCanvas + height - 200f);
+        webWidth = Mathf.RoundToInt(startWidthCanvas + width);
+        webHeight = Mathf.RoundToInt(startHeighCanvas + height - 200f);
         
-        coll.localScale = new Vector3(scale*(widthResult),scale*(heighResult),0.01f);
-        float y = (heighResult)/2*scale+.1f;
+        coll.localScale = new Vector3(scale*widthResult,scale*heighResult,0.01f);
+        float y = heighResult/2*scale+.1f;
         helperLookat.localPosition = new Vector3(0,y*transform.localScale.y,0);
         canvasParent.localPosition = new Vector3(0,y,0);
         coll.transform.localPosition = new Vector3(0,y,0);
@@ -66,8 +95,8 @@ public class CanvasEntity : MonoBehaviour
         transform.rotation = helperLookat.rotation;
     }
     public void Apply(){
-        print("resize Apply "+webView.WebWidth+"/"+webView.WebHeight);
-        webView.RestartWebView();
+        print("resize Apply "+webWidth+"/"+webHeight);
+        webView.ResizeWeb(webWidth, webHeight);
     }
     public void CloseButton(){
         Destroy(transform.parent.gameObject);

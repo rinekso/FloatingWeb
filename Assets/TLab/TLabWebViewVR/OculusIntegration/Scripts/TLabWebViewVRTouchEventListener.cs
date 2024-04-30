@@ -54,8 +54,8 @@ namespace TLab.XR.Oculus
             {
                 m_onTheWeb = true;
 
-                m_lastXPos = (int)(uvX * m_tlabWebView.WebWidth);
-                m_lastYPos = (int)(uvY * m_tlabWebView.WebHeight);
+                m_lastXPos = (int)(uvX * m_tlabWebView.webWidth);
+                m_lastYPos = (int)(uvY * m_tlabWebView.webHeight);
 
                 int eventNum = (int)TouchPhase.Stationary;
                 if (OVRInput.GetUp(m_touchButton, m_controller))

@@ -133,14 +133,12 @@ public class GestureDetection : MonoBehaviour
         if(waitSatbleResize != null){
             StopCoroutine(waitSatbleResize);
         }
-        waitSatbleResize = StartCoroutine(WaitStableResize());
+        waitSatbleResize = StartCoroutine(WaitStableResize(canvasTarget));
     }
     Coroutine waitSatbleResize;
-    IEnumerator WaitStableResize(){
+    IEnumerator WaitStableResize(CanvasEntity target){
         yield return new WaitForSeconds(2);
-        if(canvasTarget != null){
-            canvasTarget.Apply();
-        }
+        target.Apply();
         waitSatbleResize = null;
     }
     Transform GetFinger(OVRSkeleton skeletonTarget, OVRSkeleton.BoneId boneId){
