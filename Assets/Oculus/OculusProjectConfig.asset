@@ -17,7 +17,7 @@ MonoBehaviour:
   handTrackingSupport: 1
   handTrackingFrequency: 1
   handTrackingVersion: 0
-  multimodalHandsControllersSupport: 0
+  multimodalHandsControllersSupport: 1
   anchorSupport: 1
   sharedAnchorSupport: 0
   renderModelSupport: 1

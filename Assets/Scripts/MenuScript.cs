@@ -105,6 +105,7 @@ public class MenuScript : MonoBehaviour
     void Update()
     {
         IHand hand;
+        // print("Hand "+OvrHand.IsTracked);
         if(OvrHand.IsTracked)
             hand = LeftHand;
         else
