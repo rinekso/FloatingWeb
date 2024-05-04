@@ -31,8 +31,8 @@ public class MenuScript : MonoBehaviour
     BrowserDataContainer browserData;
     // [SerializeField]
     // GameObject canvas, coll;
-    public IHand LeftHand { get; set; }
-    public IHand LeftHandController { get; set; }
+    public SyntheticHand LeftHand { get; set; }
+    public SyntheticHand LeftHandController { get; set; }
     [SerializeField]
     OVRHand OvrHand;
     bool firstVisible = false;
@@ -94,8 +94,8 @@ public class MenuScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        LeftHand = _leftHand as IHand;
-        LeftHandController = _leftHandController as IHand;
+        LeftHand = _leftHand as SyntheticHand;
+        LeftHandController = _leftHandController as SyntheticHand;
         if(PlayerPrefs.HasKey("BrowserData")){
             LoadLayout();
         }
@@ -104,7 +104,7 @@ public class MenuScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        IHand hand;
+        SyntheticHand hand;
         // print("Hand "+OvrHand.IsTracked);
         if(OvrHand.IsTracked)
             hand = LeftHand;
@@ -171,7 +171,11 @@ public class MenuScript : MonoBehaviour
             bool wait = true;
             while (wait)
             {
+#if UNITY_ANDROID && !UNITY_EDITOR || DEBUG
                 wait = !canvasEntity.IsWebInit();
+#else
+                wait = false;
+#endif
                 yield return new WaitForEndOfFrame();
             }
             canvasEntity.ResizeAndLoad(item.CanvasParent.x,item.CanvasParent.y,item.url);

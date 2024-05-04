@@ -51,6 +51,6 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "WebAssistantBrowser.sln",
+    "dotnet.defaultSolution": "FloatingWeb.sln",
     "dotnet.preferCSharpExtension": true
 }

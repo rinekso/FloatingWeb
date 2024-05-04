@@ -137,7 +137,7 @@ public class GestureDetection : MonoBehaviour
     }
     Coroutine waitSatbleResize;
     IEnumerator WaitStableResize(CanvasEntity target){
-        yield return new WaitForSeconds(2);
+        yield return new WaitForSeconds(1);
         target.Apply();
         waitSatbleResize = null;
     }
